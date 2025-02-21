@@ -2,14 +2,15 @@
 import tkinter as tk
 
 root = tk.Tk()
-t = 0
+time = 0
 label = tk.Label(root)
-windowWidth = 256
-windowHeight = 256
+zoom = 4
+windowWidth = 128
+windowHeight = 128
 windowWidthZ = 256
-tickRate = 5
+tickRate = 12
 def main():
-    img = tk.PhotoImage(data=draw(sh, windowWidth, windowHeight)).zoom(2, 2)
+    img = tk.PhotoImage(data=draw(sh, windowWidth, windowHeight)).zoom(zoom, zoom)
     label.config(image=img)
     label.pack()
     root.bind("<Motion>", on_mouse_move)
@@ -18,17 +19,18 @@ def main():
     root.mainloop()
 
 def update():
-    global t
-    t += 1
-    img = tk.PhotoImage(data=draw(sh, windowWidth, windowHeight)).zoom(2, 2)
+    global time
+    time += 5 * tickRate / 1000.0
+    # print(time)
+    img = tk.PhotoImage(data=draw(sh, windowWidth, windowHeight)).zoom(zoom, zoom)
     label.config(image=img)
     label.image = img
     root.after(tickRate, update)
 
 def on_mouse_move(event):
     global lightSourceX, lightSourceY, lsXScaled, lsYScaled
-    lightSourceX = event.x / 2
-    lightSourceY = event.y / 2
+    lightSourceX = event.x / zoom
+    lightSourceY = event.y / zoom
     lsXScaled = lightSourceX / windowWidth
     lsYScaled = lightSourceY / windowHeight
 
@@ -40,7 +42,7 @@ def on_key_pressed(event):
         lightSourceZ -= 1
 
     lsZScaled = lightSourceZ / windowWidthZ
-    print(lightSourceZ)
+    # print(lightSourceZ)
 
 def draw(shader, width, height):
     image = bytearray((0, 0, 0) * width * height)
@@ -55,8 +57,8 @@ def draw(shader, width, height):
 
 ballColor = 0.2, 0.3, 0.4
 rad = 40
-posX = 128
-posY = 128
+posX = 64
+posY = 64
 posZ = 100
 radScaled = rad / windowWidth
 radSquare = radScaled * radScaled
@@ -106,14 +108,34 @@ def sh(x, y):
     a1 = (b - math.sqrt(d)) / ls_distance_squared
     a2 = 2 * b / ls_distance_squared - a1
     a = (abs(a1) > 0.01) * a1 + (abs(a2) > 0.01) * a2
-    relative_ls_power = (a > -0.2) * 1 / ls_distance_squared * lightPower
-    multiplier = relative_ls_power + noise(x, y, t)
+    is_lit = a > -0.2
+    relative_ls_power = is_lit * 1 / ls_distance_squared * lightPower
+    time_lit = time * 15 * ls_distance_squared
+    multiplier = relative_ls_power + noise(x, y, 7 * time) * (not is_lit) + soft_noise(x, y, int(time_lit), int(time_lit) + 1, fract(time_lit)) * is_lit
     return tuple(multiplier * c for c in color)
+
+
+
+def int_base(x):
+    if x <= 0.01: return 0
+    return math.exp(-1 / x)
+
+q1 = int_base(1)
+qq1 = int_base(q1)
+
+def int_unsafe(x):
+    return 1/2 + (int_base(q1 - int_base(1 - x)) - int_base(q1 - int_base(x))) / 2 / qq1
+
+def perp(a, b, t):
+    return a + (b - a) * int_unsafe(t)
 
 def noise(x, y, seed):
     return fract(math.sin(x * y * 276361) * seed)
 
 def fract(x):
     return x - math.floor(x)
+
+def soft_noise(x, y, seed1, seed2, t):
+    return perp(noise(x, y, seed1), noise(x, y, seed2), t)
 
 main()
