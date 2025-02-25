@@ -4,11 +4,11 @@ import tkinter as tk
 root = tk.Tk()
 time = 0
 label = tk.Label(root)
-zoom = 4
+zoom = 5
 windowWidth = 128
 windowHeight = 128
 windowWidthZ = 256
-tickRate = 12
+tickRate = 6
 def main():
     img = tk.PhotoImage(data=draw(sh, windowWidth, windowHeight)).zoom(zoom, zoom)
     label.config(image=img)
@@ -108,10 +108,11 @@ def sh(x, y):
     a1 = (b - math.sqrt(d)) / ls_distance_squared
     a2 = 2 * b / ls_distance_squared - a1
     a = (abs(a1) > 0.01) * a1 + (abs(a2) > 0.01) * a2
-    is_lit = a > -0.2
-    relative_ls_power = is_lit * 1 / ls_distance_squared * lightPower
     time_lit = time * 15 * ls_distance_squared
-    multiplier = relative_ls_power + noise(x, y, 7 * time) * (not is_lit) + soft_noise(x, y, int(time_lit), int(time_lit) + 1, fract(time_lit)) * is_lit
+    noise_lit = soft_noise(x, y, int(time_lit), int(time_lit) + 1, fract(time_lit))**0.5
+    is_lit = (a > -0.4 * noise(x, y, 21314634))
+    relative_ls_power = is_lit * 1 / ls_distance_squared * lightPower
+    multiplier = relative_ls_power + noise(x, y, 7 * time)**2 * (not is_lit) + noise_lit * is_lit
     return tuple(multiplier * c for c in color)
 
 
@@ -123,8 +124,9 @@ def int_base(x):
 q1 = int_base(1)
 qq1 = int_base(q1)
 
-def int_unsafe(x):
-    return 1/2 + (int_base(q1 - int_base(1 - x)) - int_base(q1 - int_base(x))) / 2 / qq1
+def int_unsafe(t):
+    # return 1/2 + (int_base(q1 - int_base(1 - t)) - int_base(q1 - int_base(t))) / 2 / qq1
+    return t
 
 def perp(a, b, t):
     return a + (b - a) * int_unsafe(t)
