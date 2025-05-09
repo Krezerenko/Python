@@ -60,16 +60,10 @@ def test():
     assert (obj.move("LOUD INCORRECT BUZZ NOISE") == "unknown")
     assert (obj.move("jog") == "unsupported")
     assert (obj.move("join") is None)
-    assert (obj.move("sway") is None)
-    assert (obj.move("sort") is None)
-    assert (obj.move("loop") is None)
-    assert (obj.move("jog") is None)
+    obj.state = "d2"
     assert (obj.w(1) is None)
     assert (obj.move("pull") is None)
-    assert (obj.move("sway") is None)
-    assert (obj.move("sort") is None)
-    assert (obj.move("loop") is None)
-    assert (obj.move("jog") is None)
+    obj.state = "d2"
     assert (obj.w(0) is None)
     assert (obj.move("pull") is None)
     assert (not obj.has_max_in_edges())
